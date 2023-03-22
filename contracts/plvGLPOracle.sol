@@ -89,7 +89,7 @@ contract PlvGLPOracle is Ownable {
         uint256 latestIndexing = HistoricalIndices.length - 1;
         uint256 sum;
         if (latestIndexing <= windowSize) {
-            for (uint256 i = 0; i < latestIndexing; i++) {
+            for (uint256 i; i < latestIndexing; ++i) {
                 sum += HistoricalIndices[i].recordedIndex;
             }
             averageIndex = sum / HistoricalIndices.length;
