@@ -71,10 +71,11 @@ contract PlvGLPOracle is Ownable {
         @return Returns the current plvGLP/GLP exchange rate directly from Plutus vault contract.
      */
     function getPlutusExchangeRate() public view returns (uint256) {
+        address _plvGLP = plvGLP;
         //retrieve total assets from plvGLP contract
-        uint256 totalAssets = plvGLPInterface(plvGLP).totalAssets();
+        uint256 totalAssets = plvGLPInterface(_plvGLP).totalAssets();
         //retrieve total supply from plvGLP contract
-        uint256 totalSupply = ERC20Interface(plvGLP).totalSupply();
+        uint256 totalSupply = ERC20Interface(_plvGLP).totalSupply();
         //plvGLP/GLP Exchange Rate = Total Assets / Total Supply
         uint256 exchangeRate = (totalAssets * BASE) / totalSupply;
         return exchangeRate;
@@ -86,18 +87,28 @@ contract PlvGLPOracle is Ownable {
         @return Returns the moving average of the index over the specified window.
      */
     function computeAverageIndex() public returns (uint256) {
-        uint256 latestIndexing = HistoricalIndices.length - 1;
+        IndexInfo[] memory _HistoricalIndices = HistoricalIndices;
+        uint256 hlen = _HistoricalIndices.length;
+        uint256 latestIndexing = hlen - 1;
         uint256 sum;
+
+        
         if (latestIndexing <= windowSize) {
-            for (uint256 i; i < latestIndexing; ++i) {
-                sum += HistoricalIndices[i].recordedIndex;
+            for (uint256 i; i < latestIndexing;) {
+                sum += _HistoricalIndices[i].recordedIndex;
+                unchecked {
+                    ++i;
+                }
             }
-            averageIndex = sum / HistoricalIndices.length;
+            averageIndex = sum / hlen;
             return averageIndex;
         } else {
             uint256 firstIndex = latestIndexing - windowSize + 1;
-            for (uint256 i = firstIndex; i <= latestIndexing; i++) {
-                sum += HistoricalIndices[i].recordedIndex;
+            for (uint256 i = firstIndex; i <= latestIndexing;) {
+                sum += _HistoricalIndices[i].recordedIndex;
+                unchecked {
+                    ++i;
+                }
             }
             averageIndex = sum / windowSize;
             return averageIndex;
@@ -108,8 +119,9 @@ contract PlvGLPOracle is Ownable {
         @notice Returns the value of the previously accepted exchange rate.
      */
     function getPreviousIndex() public view returns (uint256) {
-        uint256 previousIndexing = HistoricalIndices.length - 1;
-        uint256 previousIndex = HistoricalIndices[previousIndexing].recordedIndex;
+        IndexInfo[] memory _HistoricalIndices = HistoricalIndices;
+        uint256 previousIndexing = _HistoricalIndices.length - 1;
+        uint256 previousIndex = _HistoricalIndices[previousIndexing].recordedIndex;
         return previousIndex;
     }
 
@@ -181,7 +193,7 @@ contract PlvGLPOracle is Ownable {
     function _updateGlpAddress(address _newGlpAddress) external onlyOwner {
         address oldGLPAddress = GLP;
         GLP = _newGlpAddress;
-        emit newGLPAddress(oldGLPAddress, GLP);
+        emit newGLPAddress(oldGLPAddress, _newGlpAddress);
     }
 
     /**
@@ -191,7 +203,7 @@ contract PlvGLPOracle is Ownable {
     function _updateGlpManagerAddress(address _newGlpManagerAddress) external onlyOwner {
         address oldManagerAddress = GLPManager;
         GLPManager = _newGlpManagerAddress;
-        emit newGLPManagerAddress(oldManagerAddress, GLPManager);
+        emit newGLPManagerAddress(oldManagerAddress, _newGlpManagerAddress);
     }
 
     /**
@@ -201,7 +213,7 @@ contract PlvGLPOracle is Ownable {
     function _updatePlvGlpAddress(address _newPlvGlpAddress) external onlyOwner {
         address oldPlvGLPAddress = plvGLP;
         plvGLP = _newPlvGlpAddress;
-        emit newPlvGLPAddress(oldPlvGLPAddress, plvGLP);
+        emit newPlvGLPAddress(oldPlvGLPAddress, _newPlvGlpAddress);
     }
 
     /**
@@ -211,12 +223,12 @@ contract PlvGLPOracle is Ownable {
     function _updateWindowSize(uint256 _newWindowSize) external onlyOwner {
         uint256 oldWindowSize = windowSize;
         windowSize = _newWindowSize;
-        emit newWindowSize(oldWindowSize, windowSize);
+        emit newWindowSize(oldWindowSize, _newWindowSize);
     }
 
     function _updateMaxSwing(uint256 _newMaxSwing) external onlyOwner {
         uint256 oldMaxSwing = MAX_SWING;
         MAX_SWING = _newMaxSwing;
-        emit newWindowSize(oldMaxSwing, MAX_SWING);
+        emit newWindowSize(oldMaxSwing, _newMaxSwing);
     }
 }
